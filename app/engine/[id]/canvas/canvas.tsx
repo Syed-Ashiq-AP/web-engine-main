@@ -6,6 +6,7 @@ import mergeRefs from "merge-refs";
 import { Timeline } from "./right-side-bar/editors/animation/Timeline";
 import { useGlobalStyle } from "@/app/providers/style-provider";
 import { ContextMenu } from "./ContextMenu";
+import { useJS } from "@/app/providers/js-provider";
 
 const styleOverrides = `      
         @keyframes grow-width {
@@ -50,6 +51,10 @@ export const Canvas = () => {
   if (!globalstyleContext) return;
   const { globalStyles } = globalstyleContext;
 
+  const JSContext = useJS();
+  if (!JSContext) return;
+  const { JS } = JSContext;
+
   const { setNodeRef } = useDroppable({
     id: "we-canvas",
   });
@@ -77,6 +82,15 @@ export const Canvas = () => {
   );
 
   useEffect(() => {
+    if (!JS || !canvas.current) return;
+    const shadowRoot = canvas.current.shadowRoot;
+    if (!shadowRoot) return;
+    const scriptElement = shadowRoot.getElementById("shadow_scripts");
+    if (!scriptElement) return;
+    scriptElement.innerHTML = JS;
+  }, [JS]);
+
+  useEffect(() => {
     if (!canvas.current) return;
     if (!canvas.current.shadowRoot) {
       const shadowRoot = canvas.current.attachShadow({ mode: "open" });
@@ -87,6 +101,7 @@ export const Canvas = () => {
       </style>
       <div id="we_canvas_root" style="width:100%;">
       </div>
+      <script id="shadow_scripts"></script>
     `;
     }
     document.addEventListener("setHTML", handleSetHTML);

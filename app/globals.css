@@ -1,26 +1,266 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.705 0.015 286.067);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
+}
+
+.dark {
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+}
+
+@layer base {
+  * {
+    @apply border-border m-0 p-0;
+  }
+  html,
+  body {
+    @apply w-dvw h-dvh overflow-hidden;
+  }
+  body {
+    @apply bg-background text-foreground font-(family-name:--font-inter);
+  }
+  h1 {
+    @apply font-bold text-4xl;
+  }
+  h3 {
+    @apply font-semibold text-3xl;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*Project*/
+.we_dock {
+  @apply py-2 px-8 rounded-xl border flex flex-col justify-center gap-10 w-20 absolute top-2 bottom-2 left-2 my-auto transition-all;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+}
+
+.we_dock_icon {
+  @apply p-2 rounded cursor-pointer flex flex-col items-center *:transition-all;
+}
+
+.we_dock_icon div {
+  @apply p-2 size-10 flex justify-center items-center;
+}
+.we_dock_active div,
+.we_dock_icon:hover div {
+  @apply bg-muted -translate-y-1 rounded-lg;
+}
+
+.we_dock_icon span {
+  @apply text-xs opacity-0 font-medium -translate-y-1;
+}
+.we_dock_active span,
+.we_dock_icon:hover span {
+  @apply visible opacity-100 translate-y-0;
+}
+
+/* cavas editor */
+
+.we_side_bar {
+  @apply w-[350px] m-2 rounded-lg border p-2;
+}
+
+.we_viewport {
+  @apply m-2 flex-1 w-full bg-white rounded flex items-stretch overflow-hidden relative;
+}
+
+#we_canvas {
+  @apply w-full overflow-auto flex items-stretch;
+}
+
+.we-horizontal {
+  @apply left-0 right-0 h-1 mx-auto w-full  animate-[grow-width_0.5s];
+}
+.we-vertical {
+  @apply bottom-0 top-0 w-1 h-full my-auto  animate-[grow-height_0.5s];
+}
+
+#we-floating-anchor {
+  @apply flex gap-2 items-center p-1 px-2 rounded bg-blue-500 absolute text-xs font-medium z-50 tracking-wider;
+}
+
+/* animation */
+
+.we-animation-editor-box {
+  @apply absolute bottom-2 left-2 right-2 mx-auto rounded-lg overflow-hidden;
+}
+.we-animation-editor {
+  @apply p-2 px-4  bg-neutral-800 text-white overflow-x-auto;
+
+  .we-keyframe-time-indicator,
+  .we-timeline {
+    @apply flex justify-between w-[400%] items-end;
+  }
+  .we-timeline {
+    @apply h-[20px];
+  }
+
+  .we-keyframe-time-indicator {
+    @apply h-[50px];
+  }
+  .we-keyframe-time-indicator-long,
+  .we-time-slider,
+  .we-time-indicate {
+    @apply w-[1px];
+  }
+  .we-time-indicate {
+    @apply h-1.5 bg-neutral-500;
+  }
+  .we-keyframe-time-indicator-long {
+    @apply h-[90%] mt-5 bg-neutral-700;
+  }
+  .we-time-indicate-long {
+    @apply h-2.5 relative;
+  }
+  .we-time-indicate-long span {
+    @apply absolute -top-[15px] -translate-x-1.5;
+  }
+  .we-keyframes-box,
+  .we-slider-grab {
+    @apply relative;
+  }
+  .we-slide-grabber {
+    @apply block bg-blue-500 w-2.5 aspect-2/3 -translate-x-[4px] rounded-xs cursor-e-resize;
+  }
+
+  .we-keyframe {
+    @apply relative h-full w-full;
+  }
+
+  .we-keyframe-box {
+    @apply absolute size-2 h-auto mt-1 top-0 bottom-0 my-auto;
+  }
+
+  .we-keyframe-icon {
+    @apply absolute top-0 bottom-0 size-2 m-auto;
+  }
+  .we-keyframe-icon::before {
+    content: "";
+    @apply bg-blue-500 block rotate-45 size-2;
+  }
+}
+
+/* JS */
+
+div.react-flow {
+  .we_node {
+    @apply bg-(--xy-node-background-color-default) p-3 rounded-lg;
+  }
+  --xy-controls-button-background-color-default: var(--muted);
+  --xy-node-background-color-default: var(--muted);
+
+  .react-flow__controls {
+    @apply p-0 rounded-lg overflow-hidden;
+    .react-flow__controls-button {
+      @apply border-none p-2 size-10 hover:text-black;
+    }
+  }
+  .program-flow {
+    @apply p-2;
+  }
 }

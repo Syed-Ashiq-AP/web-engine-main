@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import User from "./models/User";
 
 export const authConfig = {
   session: {
@@ -17,12 +18,14 @@ export const authConfig = {
     },
     async jwt({ token, user }) {
       if (user) {
-        token._id = user._id.toString();
+        token.id = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      session.user._id = token._id as string;
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
       return session;
     },
   },

@@ -105,7 +105,7 @@ export function ProjectList() {
 
   const { data: session, status } = useSession();
   const user = session?.user as UserDocument;
-  const id = user?._id;
+  const id = user?.id;
 
   const [data, setData] = React.useState<ProjectDocument[]>([]);
   const fetchProjects = async () => {

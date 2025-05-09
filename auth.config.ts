@@ -15,15 +15,15 @@ export const authConfig = {
 
       return isAuthenticated;
     },
-    async session({ session, token }) {
-      session.user._id = token.id as string;
-      return session;
-    },
     async jwt({ token, user }) {
       if (user) {
-        token._id = user._id?.toString(); // Attach MongoDB _id to the token
+        token._id = user._id;
       }
       return token;
+    },
+    async session({ session, token }) {
+      session.user._id = token._id as string;
+      return session;
     },
   },
   providers: [],

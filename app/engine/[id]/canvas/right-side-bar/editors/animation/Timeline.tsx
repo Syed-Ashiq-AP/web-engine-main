@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Keyframe } from "./Keyframe";
 import { usePage } from "@/app/providers/page-provirder";
 import { useAnimations } from "@/app/providers/animation-provider";
+import { cn } from "@/lib/utils";
 
 export const Timeline = () => {
   const timeNumbers = Array.from({ length: 21 }).map((_, i) => i * 5);
@@ -24,7 +25,6 @@ export const Timeline = () => {
   if (!PageContext) return <></>;
 
   const { activeMenu } = PageContext;
-  if (activeMenu !== "animation") return <></>;
 
   const AnimationsContext = useAnimations();
   if (!AnimationsContext) return <></>;
@@ -54,7 +54,12 @@ export const Timeline = () => {
   if (!activeAnimation) return <></>;
 
   return (
-    <div className="we-animation-editor-box">
+    <div
+      className={cn(
+        "we-animation-editor-box",
+        activeMenu !== "animation" && "hidden"
+      )}
+    >
       <div className="we-animation-editor">
         <div className="we-timeline">{timeLine}</div>
         <div className="we-keyframes-box">

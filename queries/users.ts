@@ -11,10 +11,15 @@ export const findOneUser = async (email: string) => {
 export const createUser = async (
   username: string,
   email: string,
-  password: string
+  password?: string
 ) => {
   try {
-    await User.create({ name: username, email, password });
+    const user: { name: string; email: string; password?: string } = {
+      name: username,
+      email,
+    };
+    if (password) user.password = password;
+    await User.create(user);
   } catch (error) {
     return false;
   }

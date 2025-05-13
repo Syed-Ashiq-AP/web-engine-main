@@ -1,8 +1,5 @@
-import type { Account, NextAuthConfig, User as AuthUser } from "next-auth";
-import User from "./models/User";
-import { signIn } from "next-auth/react";
-import connectMongoDB from "./lib/mongodb";
-import { createUser } from "./queries/users";
+import type { NextAuthConfig } from "next-auth";
+import { createUser, findOneUser } from "./queries/users";
 
 export const authConfig = {
   session: {
@@ -19,13 +16,10 @@ export const authConfig = {
       }
       if (account?.provider === "github") {
         try {
-          await connectMongoDB();
-          const userDocument = await User.findOne({ email: user.email });
+          if (!user.email || !user.name) return false;
+          const userDocument = await findOneUser(user.email);
           if (!userDocument) {
-            await User.create({
-              name: user.name,
-              email: user.email,
-            });
+            await createUser(user.name, user.email);
             return true;
           }
         } catch (error) {

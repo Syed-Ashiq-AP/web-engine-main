@@ -1,13 +1,20 @@
 import connectMongoDB from "@/lib/mongodb";
 import Project from "@/models/Project";
+import User from "@/models/User";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
   try {
     const searchParams = req.nextUrl.searchParams;
-    const userID = searchParams.get("id");
+    const email = searchParams.get("email");
     await connectMongoDB();
-    const projects = await Project.find({ userID });
+    const user = await User.findOne({ email });
+    if (!user)
+      return NextResponse.json(
+        { message: "failed", success: false },
+        { status: 500 }
+      );
+    const projects = await Project.find({ userID: user._id });
     if (projects) {
       return NextResponse.json(
         { projects: JSON.stringify(projects), success: true },

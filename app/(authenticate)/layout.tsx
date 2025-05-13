@@ -41,7 +41,7 @@ export default function RootLayout({
           <span className="text-muted-foreground">OR</span>
           <Separator className=" flex-1/2" />
         </div>
-        <Button onClick={githubLogin} disabled>
+        <Button onClick={githubLogin}>
           <Github />
           Github
         </Button>

@@ -1,32 +1,40 @@
-import type { NextAuthConfig } from "next-auth";
+import type { Account, NextAuthConfig, User as AuthUser } from "next-auth";
 import User from "./models/User";
+import { signIn } from "next-auth/react";
+import connectMongoDB from "./lib/mongodb";
+import { createUser } from "./queries/users";
 
 export const authConfig = {
   session: {
     strategy: "jwt",
   },
   pages: {
-    error: "/",
     signIn: "/",
     signOut: "/",
   },
   callbacks: {
-    authorized({ auth }) {
-      const isAuthenticated = !!auth?.user;
+    async signIn({ user, account }) {
+      if (account?.provider === "credentials") {
+        return true;
+      }
+      if (account?.provider === "github") {
+        try {
+          await connectMongoDB();
+          const userDocument = await User.findOne({ email: user.email });
+          if (!userDocument) {
+            await User.create({
+              name: user.name,
+              email: user.email,
+            });
+            return true;
+          }
+        } catch (error) {
+          console.log(error);
+          return false;
+        }
+      }
 
-      return isAuthenticated;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-      }
-      return session;
+      return true;
     },
   },
   providers: [],

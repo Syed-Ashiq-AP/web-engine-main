@@ -1,6 +1,7 @@
 import User from "@/models/User";
 import NextAuthOptions, { NextAuthConfig } from "next-auth";
 import credentials from "next-auth/providers/credentials";
+import GithubProvider from "next-auth/providers/github";
 import connectMongoDB from "./lib/mongodb";
 import { isPasswordValid } from "./lib/hash";
 import NextAuth from "next-auth";
@@ -14,6 +15,10 @@ export const {
 } = NextAuth({
   ...authConfig,
   providers: [
+    GithubProvider({
+      clientId: process.env.AUTH_GITHUB_ID,
+      clientSecret: process.env.AUTH_GITHUB_SECRET,
+    }),
     credentials({
       name: "Credentials",
       id: "credentials",

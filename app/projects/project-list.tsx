@@ -105,11 +105,12 @@ export function ProjectList() {
 
   const { data: session, status } = useSession();
   const user = session?.user as UserDocument;
-  const id = user?.id;
+  const email = user?.email;
 
   const [data, setData] = React.useState<ProjectDocument[]>([]);
   const fetchProjects = async () => {
-    const req = await fetch(`/api/projects/list?id=${id}`);
+    if (!email) return;
+    const req = await fetch(`/api/projects/list?email=${email}`);
     const res = await req.json();
     if (res.success) {
       const projects: ProjectDocument[] = JSON.parse(res.projects);
@@ -159,7 +160,7 @@ export function ProjectList() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        userID: id,
+        email,
         name: projectName,
       }),
     });

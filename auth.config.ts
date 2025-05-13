@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
-import { createUser, findOneUser } from "./queries/users";
+
+const NEXT_URL = process.env.NEXT_URL ?? "";
 
 export const authConfig = {
   session: {
@@ -17,10 +18,20 @@ export const authConfig = {
       if (account?.provider === "github") {
         try {
           if (!user.email || !user.name) return false;
-          const userDocument = await findOneUser(user.email);
-          if (!userDocument) {
-            await createUser(user.name, user.email);
-            return true;
+          const req = await fetch(`${NEXT_URL}/api/users/github`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(user),
+          });
+          if (req.ok) {
+            const res = await req.json();
+            console.log(res.message);
+            if (res.success) {
+              return true;
+            }
+            return false;
           }
         } catch (error) {
           console.log(error);

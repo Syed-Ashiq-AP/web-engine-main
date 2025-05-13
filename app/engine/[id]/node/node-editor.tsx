@@ -187,8 +187,8 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
   }, []);
 
   return (
-    <div className={cn("flex flex-col flex-1", className)}>
-      <Button
+    <div className={cn("flex flex-col flex-1 h-full", className)}>
+      {/* <Button
         className="ml-20"
         onClick={() => {
           const flow = JSInstance.toObject();
@@ -197,9 +197,9 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
         }}
       >
         Save
-      </Button>
+      </Button> */}
       <SideBar />
-      <div style={{ width: "100%", height: "90vh" }}>
+      <div style={{ height: "100%" }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}

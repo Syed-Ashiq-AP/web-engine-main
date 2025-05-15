@@ -11,10 +11,10 @@ import { ChevronDown } from "lucide-react";
 import { ClassNameValue } from "tailwind-merge";
 type DropdownEditorType = {
   title?: string;
-  values: string[] | { [key: string]: string };
-  value: string;
+  values: any[] | { [key: string | number | symbol]: any };
+  value: any;
   triggerclassName?: ClassNameValue;
-  onSelect: (val: string) => void;
+  onSelect: (val: any) => void;
 };
 export const DropdownEditor = ({
   title,

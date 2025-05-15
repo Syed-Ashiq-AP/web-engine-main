@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   StyleControllerKeys,
   styleControllers,
@@ -32,6 +32,7 @@ import { ListenController } from "./controls/ListenController";
 import { useJS } from "@/app/providers/js-provider";
 import { ClassNameValue } from "tailwind-merge";
 import { cn } from "@/lib/utils";
+import { useEditor } from "@/app/providers/editor-provider";
 
 export const BlockProperty = ({ className }: { className: ClassNameValue }) => {
   const ClassNameContext = useClassName();
@@ -40,7 +41,11 @@ export const BlockProperty = ({ className }: { className: ClassNameValue }) => {
 
   const JSContext = useJS();
   if (!JSContext) return;
-  const { globalFunctions } = JSContext;
+  const { globalFunctions, listeners, setListeners } = JSContext;
+
+  const editorContext = useEditor();
+  if (!editorContext) return;
+  const { activeElement } = editorContext;
 
   const [styles, setStyles] = React.useState<Styles | null>(null);
   const [attributes, setAttributes] = React.useState<Attributes | null>(null);
@@ -58,11 +63,22 @@ export const BlockProperty = ({ className }: { className: ClassNameValue }) => {
     [key: string]: string;
   }>({});
 
+  const handleSetListener = useCallback(
+    (listener: string, fun: string) => {
+      if (!activeElement) return;
+      const id = activeElement.id;
+      setListeners((prev) => ({
+        ...prev,
+        [id]: { ...prev[id], [listener]: fun },
+      }));
+      setListenerControlls((prev) => ({ ...prev, [listener]: fun }));
+    },
+    [activeElement, listenerControlls, listeners]
+  );
+
   React.useEffect(() => {
-    document.dispatchEvent(
-      new CustomEvent("setListeners", { detail: { listenerControlls } })
-    );
-  }, [listenerControlls]);
+    console.log(listeners);
+  }, [listeners]);
   React.useEffect(() => {
     document.dispatchEvent(
       new CustomEvent("setStyles", { detail: { styles } })
@@ -153,19 +169,24 @@ export const BlockProperty = ({ className }: { className: ClassNameValue }) => {
         )
       );
 
-      const extract_function = (fun: string) => {
-        const match = fun.match(/^[\w$]+(?=\s*\()/);
-        if (!match) return "";
-        return match[0];
-      };
-      let eventListeners: { [key: string]: string } = {};
-      EventListeners.forEach((lis) => {
-        const fun = element.getAttribute(`on${lis}`);
-        if (fun) eventListeners[lis] = extract_function(fun);
-      });
-      setListenerControlls(eventListeners);
+      const id = element.id;
+      if (!id) return;
+      // console.log(listeners);
+      const elementListeners = listeners[id] ?? {};
+      setListenerControlls(elementListeners);
+      // const extract_function = (fun: string) => {
+      //   const match = fun.match(/^[\w$]+(?=\s*\()/);
+      //   if (!match) return "";
+      //   return match[0];
+      // };
+      // let eventListeners: { [key: string]: string } = {};
+      // EventListeners.forEach((lis) => {
+      //   const fun = element.getAttribute(`on${lis}`);
+      //   if (fun) eventListeners[lis] = extract_function(fun);
+      // });
+      // setListenerControlls(eventListeners);
     });
-  }, []);
+  }, [listeners]);
 
   const handleElementClass = (cls: string) => {
     const isRemove = elementClasses?.includes(cls);
@@ -267,7 +288,7 @@ export const BlockProperty = ({ className }: { className: ClassNameValue }) => {
                 key={i}
                 functions={Object.keys(globalFunctions)}
                 listen={lis}
-                handler={handleSetListen}
+                handler={handleSetListener}
                 funcName={name}
               />
             ))}

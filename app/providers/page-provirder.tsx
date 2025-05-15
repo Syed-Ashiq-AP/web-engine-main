@@ -12,7 +12,7 @@ type pageContextType = {
 const pageContext = createContext<pageContextType | null>(null);
 
 export const PageContextProvider = ({ children }: { children?: ReactNode }) => {
-  const [page, setPage] = useState<pageType>({ activeMenu: "layers" });
+  const [page, setPage] = useState<pageType>({ activeMenu: "js" });
 
   const value = useMemo(
     () => ({

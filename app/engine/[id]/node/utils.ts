@@ -20,7 +20,7 @@ export const Compile = (
     (edge: Edge) =>
       edge.source === targetNode.id &&
       edge.targetHandle &&
-      edge.targetHandle.includes("from")
+      edge.targetHandle === "in"
   );
   if (toEdge) {
     return [

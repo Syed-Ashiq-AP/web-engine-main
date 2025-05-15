@@ -7,6 +7,7 @@ import { BlockItem } from "./left-side-bar/add-block/block-item";
 import { useEditor } from "@/app/providers/editor-provider";
 import { ClassNameValue } from "tailwind-merge";
 import { cn } from "@/lib/utils";
+import { nanoid } from "nanoid";
 
 interface SetCustomEventDetail {
   styles: { [key: string]: string };
@@ -333,7 +334,7 @@ export const CanvasEditor = ({ className }: { className: ClassNameValue }) => {
     anchor.style.left = element.getBoundingClientRect().left + "px";
 
     anchor.children[0].innerHTML = `${element.tagName} ${
-      element.id && ` - ${element.id}`
+      element.id && ` - ${element.id.replace(/-we-(?!.*-we-).*$/, "")}`
     }`;
 
     setActiveElement((prev) => {
@@ -475,7 +476,12 @@ export const CanvasEditor = ({ className }: { className: ClassNameValue }) => {
 
         case "add-block":
           if (!blockData) return;
+          const canvasRoot = canvas.current.shadowRoot;
+          if (!canvasRoot) return;
           const element = WECreateElement(...blockData);
+          const tag = element.tagName;
+          const idCount = canvasRoot.querySelectorAll(tag).length;
+          element.id = `${tag + idCount}-we-${nanoid()}`;
           placeholder.replaceWith(element);
           handleSetActiveElement(element);
           break;

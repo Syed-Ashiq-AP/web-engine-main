@@ -55,8 +55,9 @@ export const DataContextProvider = ({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const getJsContext = () => {
-    const { JSFlow, JS, globalFunctions, globalVariables } = JSContext;
-    return { JSFlow, JS, globalFunctions, globalVariables };
+    const { JSFlow, JS, globalFunctions, globalVariables, listeners } =
+      JSContext;
+    return { JSFlow, JS, globalFunctions, globalVariables, listeners };
   };
 
   const getHTML = useCallback(() => {
@@ -123,21 +124,28 @@ export const DataContextProvider = ({
     }
   };
 
-  const loadJsContex = (JsContext: any) => {
-    const { setJSFlow, setGlobalVariables, setGlobalFunctions, setJS } =
-      JSContext;
+  const loadJsContext = (JsContext: any) => {
+    const {
+      setJSFlow,
+      setGlobalVariables,
+      setGlobalFunctions,
+      setJS,
+      setListeners,
+    } = JSContext;
     if (!JsContext) return;
     const {
       JSFlow = "",
       globalVariables = {},
       JS = "",
       globalFunctions = {},
+      listeners = {},
     } = JsContext;
     setJSFlow(JSFlow);
     setGlobalFunctions(globalFunctions);
     setGlobalVariables(globalVariables);
     setJS(JS);
     loadJSFlow(JSFlow);
+    setListeners(listeners);
   };
 
   const loadGlobalStyleContext = (context: any) => {
@@ -160,7 +168,8 @@ export const DataContextProvider = ({
 
   const loadData = useCallback(
     (projectData: any) => {
-      loadJsContex(projectData.JsContext);
+      if (!projectData) return;
+      loadJsContext(projectData.JsContext);
       loadGlobalStyleContext(projectData.globalStyleContext);
       loadClassContext(projectData.classNameContext);
       loadAnimationContext(projectData.animationsContext);

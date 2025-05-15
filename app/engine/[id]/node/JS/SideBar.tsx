@@ -1,25 +1,29 @@
-import React, { useCallback, useRef, useState } from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { SideBarItem } from "./SideBarItem";
-import { Node, useReactFlow } from "@xyflow/react";
-import { nanoid } from "nanoid";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { FaPlus } from "react-icons/fa";
-import { FaChevronLeft } from "react-icons/fa";
-import { cn } from "@/lib/utils";
+import { VariableItem } from "./sidebar/variable-item";
 import { useJS } from "@/app/providers/js-provider";
-export const SideBar = () => {
-  const JSContext = useJS();
-  if (!JSContext) return;
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { FaPlus } from "react-icons/fa6";
+import { useCallback, useRef, useState } from "react";
+import { DropdownEditor } from "../../canvas/right-side-bar/editors/DropdownEditor";
+import { nanoid } from "nanoid";
+import { Node, useReactFlow } from "@xyflow/react";
+import { FunctionItem } from "./sidebar/function-item";
+import { ParameterItem } from "./sidebar/parameter-item";
 
+type variableDataTypeState = "string" | "number" | "boolean" | "block";
+
+export const SideBar = () => {
   const { setNodes, setEdges, setViewport, screenToFlowPosition } =
     useReactFlow();
+
+  const JSContext = useJS();
+  if (!JSContext) return;
 
   const {
     globalVariables,
@@ -33,8 +37,14 @@ export const SideBar = () => {
     setJSFlow,
     setFunction,
   } = JSContext;
+  const globalVariableInputRef = useRef<HTMLInputElement | null>(null);
+  const globalFunctionInputRef = useRef<HTMLInputElement | null>(null);
+  const functionParameterInputRef = useRef<HTMLInputElement | null>(null);
+  const [variableDataType, setVariableDataType] = useState<
+    Record<"variable" | "parameter", variableDataTypeState>
+  >({ parameter: "string", variable: "string" });
 
-  const handleAddVariable = useCallback(
+  const handleAddVariableNode = useCallback(
     (name: string, type: "Get" | "Set") => {
       const nodeID = nanoid();
       const vx = window.innerWidth / 2;
@@ -47,57 +57,86 @@ export const SideBar = () => {
         id: nodeID,
         type: `Variable${type}`,
         position: { x, y },
+        data: { name, dataType: globalVariables[name] },
+      };
+
+      setNodes((nodes) => [...nodes, newNode]);
+    },
+    [screenToFlowPosition, globalVariables]
+  );
+
+  const handleAddFunctionNode = useCallback(
+    (name: string, type: "call" | "edit") => {
+      if (type === "edit") {
+        const getFunctionFlow = async () => {
+          const funcFlow = getFunction(name, "instance");
+          const func = funcFlow ? JSON.parse(funcFlow) ?? null : null;
+          if (func) {
+            const { x = 0, y = 0, zoom = 1 } = func.viewport;
+            setNodes(func.nodes || []);
+            setEdges(func.edges || []);
+            setViewport({ x, y, zoom });
+          }
+        };
+        if (JSInstance) {
+          const flow = JSInstance.toObject();
+          if (!activeFunction) {
+            setJSFlow(JSON.stringify(flow));
+          } else {
+            setFunction(name, "instance", JSON.stringify(flow));
+          }
+        }
+        getFunctionFlow();
+        setActiveFunction(name);
+        return;
+      }
+      const nodeID = nanoid();
+      const vx = window.innerWidth / 2;
+      const vy = window.innerHeight / 2;
+      const { x, y } = screenToFlowPosition({
+        x: vx,
+        y: vy,
+      });
+      const newNode: Node = {
+        id: nodeID,
+        type: `FunctionCall`,
+        position: { x, y },
         data: { name },
       };
 
       setNodes((nodes) => [...nodes, newNode]);
     },
-    [screenToFlowPosition]
+    [
+      setNodes,
+      setViewport,
+      setActiveFunction,
+      JSInstance,
+      activeFunction,
+      globalFunctions,
+    ]
   );
 
-  const handleFunction = (name: string, type: "Call") => {
-    const nodeID = nanoid();
-    const vx = window.innerWidth / 2;
-    const vy = window.innerHeight / 2;
-    const { x, y } = screenToFlowPosition({
-      x: vx,
-      y: vy,
-    });
-    const newNode: Node = {
-      id: nodeID,
-      type: `Function${type}`,
-      position: { x, y },
-      data: { name },
-    };
-
-    setNodes((nodes) => [...nodes, newNode]);
-  };
-
-  const handleEditFunction = useCallback(
-    (name: string) => {
-      const getFunctionFlow = async () => {
-        const funcFlow = getFunction(name, "instance");
-        const func = funcFlow ? JSON.parse(funcFlow) ?? {} : {};
-
-        if (func) {
-          const { x = 0, y = 0, zoom = 1 } = func.viewport;
-          setNodes(func.nodes || []);
-          setEdges(func.edges || []);
-          setViewport({ x, y, zoom });
-        }
+  const handleAddParameterNode = useCallback(
+    (name: string, type: "Get") => {
+      if (!activeFunction) return;
+      const nodeID = nanoid();
+      const vx = window.innerWidth / 2;
+      const vy = window.innerHeight / 2;
+      const { x, y } = screenToFlowPosition({
+        x: vx,
+        y: vy,
+      });
+      const dataType = getFunction(activeFunction, "parameters")[name];
+      const newNode: Node = {
+        id: nodeID,
+        type: `Parameter${type}`,
+        position: { x, y },
+        data: { name, dataType },
       };
-      if (JSInstance) {
-        const flow = JSInstance.toObject();
-        if (!activeFunction) {
-          setJSFlow(JSON.stringify(flow));
-        } else {
-          setFunction(name, "instance", JSON.stringify(flow));
-        }
-      }
-      getFunctionFlow();
-      setActiveFunction(name);
+
+      setNodes((nodes) => [...nodes, newNode]);
     },
-    [setNodes, setViewport, setActiveFunction, JSInstance, activeFunction]
+    [activeFunction, globalFunctions]
   );
 
   const restoreJS = () => {
@@ -113,237 +152,187 @@ export const SideBar = () => {
     }
   };
 
-  const handleSaveFunction = (name: string) => {
+  const handleSaveFunction = useCallback(() => {
+    if (!activeFunction) return;
     if (JSInstance) {
       const flow = JSInstance.toObject();
-      setFunction(name, "instance", JSON.stringify(flow));
+      setFunction(activeFunction, "instance", JSON.stringify(flow));
       restoreJS();
       setActiveFunction(null);
     }
-  };
+  }, [activeFunction]);
 
   const handleCancelFunction = () => {
     setActiveFunction(null);
     restoreJS();
   };
 
-  const handleAddParameter = (name: string, type: "Get") => {
-    const nodeID = nanoid();
-    const vx = window.innerWidth / 2;
-    const vy = window.innerHeight / 2;
-    const { x, y } = screenToFlowPosition({
-      x: vx,
-      y: vy,
-    });
-    const newNode: Node = {
-      id: nodeID,
-      type: `Parameter${type}`,
-      position: { x, y },
-      data: { name },
-    };
-
-    setNodes((nodes) => [...nodes, newNode]);
-  };
-
-  const globalVariableInputRef = useRef<HTMLInputElement | null>(null);
-  const globalFunctionInputRef = useRef<HTMLInputElement | null>(null);
-  const FunctionParameterInputRef = useRef<HTMLInputElement | null>(null);
-
-  const [open, setOpen] = useState(false);
+  const handleDelete = () => {};
 
   return (
-    <div
-      className={cn(
-        "absolute left-0 top-0 bottom-0 w-[350px] bg-muted z-50 p-2 rounded-r-lg",
-        !open && "-left-[350px]"
-      )}
-    >
-      <div className="relative w-full">
-        <span
-          className={cn(
-            "absolute -right-15 top-2 size-10 rounded-full bg-muted flex items-center justify-center cursor-pointer",
-            !open && "rotate-180"
-          )}
-          onClick={() => setOpen(!open)}
-        >
-          <FaChevronLeft />
-        </span>
-      </div>
-      <Accordion type="single" collapsible>
+    <div className="flex flex-col w-[300px] m-2 rounded-lg border px-2">
+      <Accordion type="multiple">
         <AccordionItem value="variables">
-          <AccordionTrigger className=" cursor-pointer p-2 hover:bg-neutral-900">
-            Global Variables
-          </AccordionTrigger>
-          <AccordionContent className="p-2 rounded-md border border-neutral-700 mt-2">
-            <div className="flex gap-2 w-full">
-              <Input
-                placeholder="Enter Variable Name"
-                ref={globalVariableInputRef}
-              />
-
-              <Button
-                variant={"outline"}
-                onClick={() => {
-                  if (!globalVariableInputRef.current) return;
-                  const value = globalVariableInputRef.current.value;
-                  if (!value || value.length === 0) return;
-                  setVariable(value, "");
-
-                  globalVariableInputRef.current.value = "";
-                }}
-              >
-                <FaPlus />
-              </Button>
-            </div>
-            {Object.entries(globalVariables).map(([name, value], i) => (
-              <SideBarItem
-                key={i}
-                className={"hover:bg-neutral-900 items-center justify-between"}
-              >
-                <span>{name}</span>
-                <span>{typeof value}</span>
-                <Button
-                  variant={"outline"}
-                  className="p-2 text-xs"
-                  onClick={() => handleAddVariable(name, "Get")}
-                >
-                  Get
-                </Button>
-                <Button
-                  variant={"outline"}
-                  className="p-2 text-xs"
-                  onClick={() => handleAddVariable(name, "Set")}
-                >
-                  Set
-                </Button>
-              </SideBarItem>
-            ))}
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="functions">
-          <AccordionTrigger className=" cursor-pointer p-2 hover:bg-neutral-900">
-            Global Functions
-          </AccordionTrigger>
-          <AccordionContent className="p-2 rounded-md border border-neutral-700 mt-2">
-            <div className="flex gap-2 w-full">
-              <Input
-                placeholder="Enter Function Name"
-                ref={globalFunctionInputRef}
-              />
-
-              <Button
-                variant={"outline"}
-                onClick={() => {
-                  if (!globalFunctionInputRef.current) return;
-                  const value = globalFunctionInputRef.current.value;
-                  if (!value || value.length === 0) return;
-                  setFunction(value, null, {
-                    parameters: [""],
-                    instance:
-                      '{"viewport":{"x":0,"y":0,"zoom":1},"nodes":[],"edges":[]}',
-                  });
-
-                  globalFunctionInputRef.current.value = "";
-                }}
-              >
-                <FaPlus />
-              </Button>
-            </div>
-            {Object.entries(globalFunctions).map(([name, _], i) => (
-              <SideBarItem
-                key={i}
-                className={"hover:bg-neutral-900 items-center justify-between"}
-              >
-                <span>{name}</span>
-                {activeFunction && activeFunction === name ? (
-                  <>
-                    <Button
-                      variant={"outline"}
-                      className="p-2 text-xs"
-                      onClick={() => handleSaveFunction(name)}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      variant={"outline"}
-                      className="p-2 text-xs"
-                      onClick={handleCancelFunction}
-                    >
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant={"outline"}
-                    className="p-2 text-xs"
-                    onClick={() => handleEditFunction(name)}
-                  >
-                    Edit
-                  </Button>
-                )}
-                <Button
-                  variant={"outline"}
-                  className="p-2 text-xs"
-                  onClick={() => handleFunction(name, "Call")}
-                >
-                  Call
-                </Button>
-              </SideBarItem>
-            ))}
-          </AccordionContent>
-        </AccordionItem>
-        {activeFunction && (
-          <AccordionItem value="parameters">
-            <AccordionTrigger className=" cursor-pointer p-2 hover:bg-neutral-900">
-              Parameters
-            </AccordionTrigger>
-            <AccordionContent className="p-2 rounded-md border border-neutral-700 mt-2">
-              <div className="flex gap-2 w-full">
+          <AccordionTrigger>Global Variables</AccordionTrigger>
+          <AccordionContent>
+            <div className="w-full flex flex-col gap-3 text-center">
+              <div className="flex gap-2">
                 <Input
-                  placeholder="Enter Parameter Name"
-                  ref={FunctionParameterInputRef}
+                  placeholder="Variable Name"
+                  ref={globalVariableInputRef}
                 />
-
+                <DropdownEditor
+                  values={["string", "number", "boolean", "block"]}
+                  value={variableDataType.variable}
+                  onSelect={(val) =>
+                    setVariableDataType((prev) => ({ ...prev, variable: val }))
+                  }
+                />
                 <Button
+                  size={"icon"}
                   variant={"outline"}
                   onClick={() => {
-                    if (!FunctionParameterInputRef.current) return;
-                    const value = FunctionParameterInputRef.current.value;
+                    if (!globalVariableInputRef.current) return;
+                    const value = globalVariableInputRef.current.value;
                     if (!value || value.length === 0) return;
-                    const parameters: string[] = getFunction(
-                      activeFunction,
-                      "parameters"
+                    const exists = Object.keys(globalVariables).find(
+                      (var_name) => var_name === value
                     );
-                    setFunction(activeFunction, "parameters", [
-                      ...parameters,
-                      value,
-                    ]);
+                    if (exists) return;
+                    setVariable(value, variableDataType.variable);
 
-                    FunctionParameterInputRef.current.value = "";
+                    globalVariableInputRef.current.value = "";
                   }}
                 >
                   <FaPlus />
                 </Button>
               </div>
-              {getFunction(activeFunction, "parameters").map(
-                (name: string, i: number) => (
-                  <SideBarItem
-                    key={i}
-                    className={
-                      "hover:bg-neutral-900 items-center justify-between"
+              <div className="grid grid-cols-[120px_100px_60px]">
+                <span>Variable name</span>
+                <span>Data Type</span>
+                <span>Action</span>
+              </div>
+              {Object.entries(globalVariables).map(([name, type], i) => (
+                <VariableItem
+                  name={name}
+                  type={type}
+                  key={i}
+                  handleAddNode={handleAddVariableNode}
+                  handleDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="functions">
+          <AccordionTrigger>Global Functions</AccordionTrigger>
+          <AccordionContent>
+            <div className="w-full flex flex-col gap-3 text-center">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Function Name"
+                  ref={globalFunctionInputRef}
+                />
+                <Button
+                  size={"icon"}
+                  variant={"outline"}
+                  onClick={() => {
+                    if (!globalFunctionInputRef.current) return;
+                    const value = globalFunctionInputRef.current.value;
+                    if (!value || value.length === 0) return;
+                    const exists = Object.keys(globalVariables).find(
+                      (var_name) => var_name === value
+                    );
+                    if (exists) return;
+                    setFunction(value, null, {
+                      parameters: {},
+                      instance:
+                        '{"viewport":{"x":0,"y":0,"zoom":1},"nodes":[],"edges":[]}',
+                    });
+
+                    globalFunctionInputRef.current.value = "";
+                  }}
+                >
+                  <FaPlus />
+                </Button>
+              </div>
+              <div className="grid grid-cols-[220px_60px]">
+                <span>Function name</span>
+                <span>Action</span>
+              </div>
+              {Object.entries(globalFunctions).map(([name, _], i) => (
+                <FunctionItem
+                  isActive={activeFunction === name}
+                  handleSave={handleSaveFunction}
+                  handleCancel={handleCancelFunction}
+                  name={name}
+                  key={i}
+                  handleAddNode={handleAddFunctionNode}
+                  handleDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        {activeFunction && (
+          <AccordionItem value="parameters">
+            <AccordionTrigger>Function Parameters</AccordionTrigger>
+            <AccordionContent>
+              <div className="w-full flex flex-col gap-3 text-center">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Variable Name"
+                    ref={functionParameterInputRef}
+                  />
+                  <DropdownEditor
+                    values={["string", "number", "boolean", "block"]}
+                    value={variableDataType.parameter}
+                    onSelect={(val) =>
+                      setVariableDataType((prev) => ({
+                        ...prev,
+                        parameter: val,
+                      }))
                     }
+                  />
+                  <Button
+                    size={"icon"}
+                    variant={"outline"}
+                    onClick={() => {
+                      if (!functionParameterInputRef.current) return;
+                      const value = functionParameterInputRef.current.value;
+                      if (!value || value.length === 0) return;
+                      const parameters: string[] = getFunction(
+                        activeFunction,
+                        "parameters"
+                      );
+                      setFunction(activeFunction, "parameters", {
+                        ...parameters,
+                        [value]: variableDataType.parameter,
+                      });
+
+                      functionParameterInputRef.current.value = "";
+                    }}
                   >
-                    <span>{name}</span>
-                    <Button
-                      variant={"outline"}
-                      className="p-2 text-xs"
-                      onClick={() => handleAddParameter(name, "Get")}
-                    >
-                      Get
-                    </Button>
-                  </SideBarItem>
-                )
-              )}
+                    <FaPlus />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-[120px_100px_60px]">
+                  <span>Variable name</span>
+                  <span>Data Type</span>
+                  <span>Action</span>
+                </div>
+                {Object.entries(getFunction(activeFunction, "parameters")).map(
+                  ([name, type], i) => (
+                    <ParameterItem
+                      name={name}
+                      type={type as string}
+                      key={i}
+                      handleAddNode={handleAddParameterNode}
+                      handleDelete={handleDelete}
+                    />
+                  )
+                )}
+              </div>
             </AccordionContent>
           </AccordionItem>
         )}

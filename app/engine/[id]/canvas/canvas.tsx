@@ -53,7 +53,7 @@ export const Canvas = () => {
 
   const JSContext = useJS();
   if (!JSContext) return;
-  const { JS } = JSContext;
+  const { JS, listeners: elementListeners } = JSContext;
 
   const { setNodeRef } = useDroppable({
     id: "we-canvas",
@@ -87,8 +87,30 @@ export const Canvas = () => {
     if (!shadowRoot) return;
     const scriptElement = shadowRoot.getElementById("shadow_scripts");
     if (!scriptElement) return;
+
     scriptElement.innerHTML = JS;
   }, [JS]);
+
+  useEffect(() => {
+    if (!elementListeners || !canvas.current) return;
+    const shadowRoot = canvas.current.shadowRoot;
+    if (!shadowRoot) return;
+    const oldScript = shadowRoot.getElementById("shadow_script_listeners");
+    if (!oldScript) return;
+    let compliedJS = "";
+    Object.entries(elementListeners).forEach(([id, IDlisteners]) => {
+      Object.entries(IDlisteners).forEach(([listener, fun_name]) => {
+        compliedJS += `document.getElementById('${id}')?.addEventListener('${listener}', () => {
+    ${fun_name}();
+  });`;
+      });
+    });
+    oldScript.remove();
+    const scriptElement = document.createElement("script");
+    scriptElement.id = "shadow_script_listeners";
+    scriptElement.textContent = compliedJS;
+    shadowRoot.appendChild(scriptElement);
+  }, [elementListeners]);
 
   useEffect(() => {
     if (!canvas.current) return;
@@ -102,6 +124,7 @@ export const Canvas = () => {
       <div id="we_canvas_root" style="width:100%;">
       </div>
       <script id="shadow_scripts"></script>
+      <script id="shadow_script_listeners"></script>
     `;
     }
     document.addEventListener("setHTML", handleSetHTML);

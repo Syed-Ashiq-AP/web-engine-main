@@ -28,6 +28,8 @@ const nodes = {
   },
   Liertals: {
     "String Input": "StringInput",
+    "Number Input": "NumericInput",
+    "Boolean Input": "BooleanInput",
   },
   Console: {
     "Log in Console": "ConsoleLog",
@@ -84,14 +86,40 @@ export const AddNode = ({
       const nodeId = modifyEdge[1];
       const node = getInternalNode(nodeId);
       if (!node) return;
-      let targetHandle = handleID;
-      let sourceHandle = "";
-      if (sourceHandle.includes("to")) {
-        targetHandle = nodeHandles[modifyEdge[2] as Handlekeys].left.find((h) =>
-          h.includes("from")
-        );
-      } else {
-        targetHandle = nodeHandles[modifyEdge[2] as Handlekeys].left[0];
+      let sourceHandle: string = handleID;
+      const targetHandles = nodeHandles[modifyEdge[2] as Handlekeys].left;
+      let targetHandle: string | null = null;
+      if (sourceHandle === "out") {
+        targetHandle = targetHandles.find((h) => h === "in") ?? null;
+      }
+      if (!targetHandle) {
+        const outID = sourceHandle.split("-").slice(1);
+        const inIDs = targetHandles.map((h) => h.split("-").slice(1));
+        let targetHandleIndex = -1;
+        for (
+          let inIDsind = 0;
+          inIDsind < inIDs.length && targetHandleIndex === -1;
+          inIDsind++
+        ) {
+          for (
+            let inIDind = 0;
+            inIDind < inIDs[inIDsind].length && targetHandleIndex === -1;
+            inIDind++
+          ) {
+            for (
+              let outIDind = 0;
+              outIDind < outID.length && targetHandleIndex === -1;
+              outIDind++
+            ) {
+              if (inIDs[inIDsind][inIDind] === outID[outIDind]) {
+                targetHandleIndex = inIDind;
+              }
+            }
+          }
+        }
+        if (targetHandleIndex !== -1) {
+          targetHandle = targetHandles[targetHandleIndex];
+        }
       }
 
       if (targetHandle) {

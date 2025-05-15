@@ -247,9 +247,22 @@
 
 /* JS */
 
+.we_string {
+  @apply bg-green-500/15;
+}
+.we_number {
+  @apply bg-blue-800/15;
+}
+.we_boolean {
+  @apply bg-purple-800/15;
+}
+.we_block {
+  @apply bg-amber-800/15;
+}
+
 div.react-flow {
   .we_node {
-    @apply bg-(--xy-node-background-color-default) p-3 rounded-lg;
+    @apply flex flex-col bg-background rounded-lg border gap-2;
   }
   --xy-controls-button-background-color-default: var(--muted);
   --xy-node-background-color-default: var(--muted);
@@ -260,7 +273,16 @@ div.react-flow {
       @apply border-none p-2 size-10 hover:text-black;
     }
   }
-  .program-flow {
-    @apply p-2;
+  .we_flow_handle {
+    @apply size-3 rounded;
+  }
+
+  .we_input_handle {
+    @apply size-2;
+  }
+
+  .we_input_handle.we_connected,
+  .we_flow_handle.we_connected {
+    @apply bg-white;
   }
 }

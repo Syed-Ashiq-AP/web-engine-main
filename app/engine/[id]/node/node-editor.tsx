@@ -25,6 +25,24 @@ import { AddNode } from "./JS/AddNode";
 import { ClassNameValue } from "tailwind-merge";
 import { SideBar } from "./JS/SideBar";
 
+const getNewAddNode = ({
+  data = { handleID: null, nodeID: null },
+  x,
+  y,
+}: {
+  data?: { [key: string]: any };
+  x: number;
+  y: number;
+}) => {
+  return {
+    id: nanoid(),
+    type: "addNode",
+    position: { x, y },
+    measured: { width: 300, height: 100 },
+    data: data,
+  };
+};
+
 const NodeTypes = { ...nodeTypes, addNode: AddNode };
 export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
   const JSContext = useJS();
@@ -42,9 +60,20 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
   const [logs, setLogs] = useState<string[]>([]);
   const { screenToFlowPosition } = useReactFlow();
 
-  const [nodes, setNodes, onNodesChange]: [Node[], any, any] = useNodesState(
-    JSON.parse(JSFlow).nodes
-  );
+  const [nodes, setNodes, onNodesChange]: [Node[], any, any] = useNodesState([
+    // {
+    //   id: "node-1",
+    //   type: "Start",
+    //   position: { x: 0, y: 0 },
+    //   data: {},
+    // },
+    // {
+    //   id: "node-2",
+    //   type: "ConsoleLog",
+    //   position: { x: 100, y: 100 },
+    //   data: {},
+    // },
+  ]);
   const [edges, setEdges, onEdgesChange]: [Edge[], any, any] = useEdgesState(
     JSON.parse(JSFlow).edges
   );
@@ -52,6 +81,24 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
   const onConnect = useCallback(
     (params: Connection) => setEdges((els: Edge[]) => addEdge(params, els)),
     []
+  );
+
+  const handleAddNode = useCallback(
+    (
+      event: MouseEvent | React.MouseEvent<Element, MouseEvent> | TouchEvent
+    ) => {
+      event.preventDefault();
+      const { clientX, clientY } =
+        "changedTouches" in event ? event.changedTouches[0] : event;
+
+      const { x, y } = screenToFlowPosition({
+        x: clientX,
+        y: clientY,
+      });
+
+      setNodes((nds: Node[]) => nds.concat(getNewAddNode({ x, y })));
+    },
+    [screenToFlowPosition]
   );
 
   const CompileFunctions = (name: string, data: any) => {
@@ -68,49 +115,33 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
       const startEdge = funcEdges.find((edge) => edge.source === startNode.id);
       if (!startEdge) return "";
       return `
-                function ${name}(${parameters.join(",")}){
+                function ${name}(${Object.keys(parameters).join(",")}){
                     ${Compile(startEdge, funcEdges, funcNodes)}
                 }
             `;
     }
   };
 
-  const handleComplie = () => {
+  const handleComplie = useCallback(() => {
     const variablesJS = Object.entries(globalVariables).map(
-      ([var_name, var_value]) => `let ${var_name} = '${var_value}'`
+      ([var_name, _]) => `let ${var_name}`
     );
 
     const FunctionsJS = Object.entries(globalFunctions).map(([name, data], _) =>
       CompileFunctions(name, data)
     );
-    const startNode: Node | undefined = nodes.find(
-      (node: Node) => node.type === "Start"
-    );
+    const startNode = nodes.find((node) => node.type === "Start");
     if (!startNode) return;
     const startEdge = edges.find((edge: Edge) => edge.source === startNode.id);
     if (!startEdge) return;
-    const compileJS = Compile(startEdge, edges, nodes);
-
-    const CompileJS = [...variablesJS, FunctionsJS, ...compileJS].join(";\n");
-    setJS(CompileJS);
-    // const originalLog = console.log;
-    // console.log = function (...args) {
-    //     setLogs((prev) => [...prev, args.join(" ")]);
-    //     originalLog.apply(console, args);
-    // };
-
-    // const safeFunction = new Function(JS);
-    // safeFunction();
-    // console.log = originalLog;
-  };
+    const compiledJS = Compile(startEdge, edges, nodes);
+    setJS([...variablesJS, ...FunctionsJS, ...compiledJS].join(";\n"));
+  }, [nodes, edges]);
 
   const onConnectionEnd = useCallback(
     (event: any, connectionState: any) => {
-      if (
-        !connectionState.toHandle &&
-        connectionState.fromPosition === "right"
-      ) {
-        const { fromHandle, fromNode } = connectionState;
+      const { isValid, fromHandle, fromNode, toHandle } = connectionState;
+      if (!isValid && !toHandle) {
         const { id: handleID } = fromHandle;
         const { id: nodeID } = fromNode;
         const addNode = nodes.find((node) => node.type === "addNode");
@@ -121,6 +152,7 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
           x: clientX,
           y: clientY,
         });
+        const data = { handleID, nodeID };
         if (addNode)
           setNodes((prev: Node[]) =>
             prev.map((node) =>
@@ -128,55 +160,55 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
                 ? {
                     ...addNode,
                     position: { x, y },
-                    data: { handleID, nodeID },
+                    data: data,
                   }
                 : node
             )
           );
         else {
-          const newNode = {
-            id: nanoid(),
-            type: "addNode",
-            position: { x, y },
-            measured: { width: 300, height: 100 },
-            data: { handleID, nodeID },
-          };
-
-          setNodes((nds: Node[]) => nds.concat(newNode));
+          setNodes((nds: Node[]) => nds.concat(getNewAddNode({ data, x, y })));
         }
       }
     },
     [screenToFlowPosition, nodes]
   );
 
-  const handleAddNode = useCallback(
-    (
-      event: MouseEvent | React.MouseEvent<Element, MouseEvent> | TouchEvent
-    ) => {
-      event.preventDefault();
-      const { clientX, clientY } =
-        "changedTouches" in event ? event.changedTouches[0] : event;
-
-      const { x, y } = screenToFlowPosition({
-        x: clientX,
-        y: clientY,
-      });
-      const newNode = {
-        id: nanoid(),
-        type: "addNode",
-        position: { x, y },
-        measured: { width: 300, height: 100 },
-        data: {},
-      };
-
-      setNodes((nds: Node[]) => nds.concat(newNode));
-    },
-    [screenToFlowPosition]
-  );
+  const validConnection = (connection: Edge | Connection) => {
+    const { sourceHandle, targetHandle, source } = connection;
+    if (!sourceHandle || !targetHandle) return false;
+    if (
+      ["out", "out-false", "out-true"].includes(sourceHandle) &&
+      targetHandle === "in"
+    )
+      return true;
+    const sourceHandles = sourceHandle.split("-").slice(1);
+    const targetHandles = targetHandle.split("-").slice(1);
+    let isValid = false;
+    for (
+      let inIDind = 0;
+      inIDind < sourceHandles.length && !isValid;
+      inIDind++
+    ) {
+      for (
+        let outIDind = 0;
+        outIDind < targetHandles.length && !isValid;
+        outIDind++
+      ) {
+        if (sourceHandles[inIDind] === targetHandles[outIDind]) {
+          isValid = true;
+        }
+      }
+    }
+    return isValid;
+  };
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Delete") {
+      if (event.key === "Escape") {
+        setNodes((nds: Node[]) =>
+          nds.filter((n: Node) => n.type !== "addNode")
+        );
+      } else if (event.key === "Delete") {
         setNodes((nds: Node[]) => nds.filter((n: Node) => !n.selected));
         setEdges((eds: Edge[]) => eds.filter((e: Edge) => !e.selected));
       }
@@ -184,53 +216,42 @@ export const NodeEditor = ({ className }: { className: ClassNameValue }) => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [nodes, edges]);
 
   return (
-    <div className={cn("flex flex-col flex-1 h-full", className)}>
-      {/* <Button
-        className="ml-20"
-        onClick={() => {
-          const flow = JSInstance.toObject();
-          setJSFlow(JSON.stringify(flow));
-          handleComplie();
-        }}
-      >
-        Save
-      </Button> */}
+    <div className={cn("flex flex-1 h-full", className)}>
       <SideBar />
-      <div style={{ height: "100%" }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onInit={setJSInstance}
-          onPaneContextMenu={handleAddNode}
-          nodeTypes={NodeTypes}
-          onConnectEnd={onConnectionEnd}
-          isValidConnection={(connection) => {
-            if (
-              connection.sourceHandle?.includes("bool") &&
-              (connection.targetHandle?.includes("condition") ||
-                connection.targetHandle?.includes("frombool"))
-            )
-              return true;
-            if (
-              (connection.sourceHandle?.includes("to") &&
-                !connection.targetHandle?.includes("from")) ||
-              (!connection.sourceHandle?.includes("to") &&
-                connection.targetHandle?.includes("from"))
-            )
-              return false;
-            return true;
-          }}
-        >
-          <Controls />
-          {/* <MiniMap /> */}
-          <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
-        </ReactFlow>
+      <div className="w-full h-full flex flex-col flex-1 items-stretch">
+        <div className="flex gap-2 p-2">
+          <Button
+            variant={"outline"}
+            onClick={() => {
+              const flow = JSInstance.toObject();
+              setJSFlow(JSON.stringify(flow));
+              handleComplie();
+            }}
+          >
+            Compile
+          </Button>
+        </div>
+        <div className=" h-full border rounded-lg mb-2 ml-2">
+          <ReactFlow
+            onPaneContextMenu={handleAddNode}
+            onConnectEnd={onConnectionEnd}
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onInit={setJSInstance}
+            nodeTypes={NodeTypes}
+            isValidConnection={validConnection}
+          >
+            <Controls />
+            {/* <MiniMap /> */}
+            <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+          </ReactFlow>
+        </div>
       </div>
     </div>
   );

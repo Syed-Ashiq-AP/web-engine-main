@@ -1,22 +1,66 @@
+import { useCallback, useEffect, useState } from "react";
 import { DropdownEditor } from "../editors/DropdownEditor";
 import { InputEditor } from "../editors/InputEditor";
 import { MediaInputEditor } from "../editors/MediaInputEditor";
+import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
+import { useEditor } from "@/app/providers/editor-provider";
 
 export type Attributes = { [key: string]: string };
 export type AttributeControllersKeys = keyof typeof nativeAttributeControllers;
 export const nativeAttributeControllers = {
   ID: {
     Root: ({ attributes, setAttributes }: any) => {
+      const editorContext = useEditor();
+      if (!editorContext) return;
+
+      const { canvas } = editorContext;
+
       const { id = "" } = attributes ?? {};
+      const [tempID, setTempID] = useState(id);
+
+      const handleSaveID = useCallback(() => {
+        if (!canvas.current) return;
+        const cavasRoot = canvas.current.shadowRoot;
+        if (!cavasRoot) return;
+        const exists = cavasRoot.querySelectorAll(
+          `[id^="${tempID.replace(/-we-(?!.*-we-).*$/, "")}"]`
+        );
+        if (exists.length === 0) {
+          const anchor = document.getElementById("we-floating-anchor");
+          if (!anchor) return;
+          const anchorHTML = anchor.children[0].innerHTML.split("-");
+
+          anchor.children[0].innerHTML = `${anchorHTML[0]} - ${tempID.replace(
+            /-we-(?!.*-we-).*$/,
+            ""
+          )}`;
+
+          setAttributes((prev: any) => ({ ...prev, id: tempID }));
+        }
+      }, [tempID]);
+
+      useEffect(() => {
+        if (
+          id.match(/-we-(?!.*-we-).*$/)[0] !==
+          tempID.match(/-we-(?!.*-we-).*$/)[0]
+        ) {
+          setTempID(id);
+        }
+      }, [id, tempID]);
+
       return (
-        <div className="flex flex-col items-stretch gap-4">
+        <div className="flex justify-between items-stretch gap-4">
           <InputEditor
             title={"ID"}
-            value={id}
+            value={tempID.replace(/-we-(?!.*-we-).*$/, "")}
             onInput={(val: string) =>
-              setAttributes((prev: any) => ({ ...prev, id: val }))
+              setTempID(val + tempID.match(/-we-(?!.*-we-).*$/))
             }
           />
+          <Button size={"icon"} variant={"outline"} onClick={handleSaveID}>
+            <Check />
+          </Button>
         </div>
       );
     },

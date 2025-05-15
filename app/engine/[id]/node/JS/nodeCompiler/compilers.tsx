@@ -4,17 +4,25 @@ import { Compile, underCase } from "../../utils";
 type CompilerKeys = keyof typeof compilers;
 export const compilers = {
   VariableGet: (node: any) => {
-    return underCase(node.data.name);
+    return node.data.name;
   },
   StringInput: (node: any) => {
     return `'${node.data.value}'`;
   },
+  NumberInput: (node: any) => {
+    return node.data.value;
+  },
+  BooleanInput: (node: any) => {
+    return node.data.value.toString();
+  },
   VariableSet: (node: any, nodes: any[], edges: any[]): string => {
     const { data, id } = node;
     const variableEdge = edges.find(
-      (edge) => edge.target === id && edge.targetHandle === "variable"
+      (edge) => edge.target === id && edge.targetHandle === "in-get"
     );
-    if (!variableEdge) return `${underCase(data.name)} = '${data.value}'`;
+    const isString = typeof data.value === "string";
+    if (!variableEdge)
+      return `${data.name} = ${isString ? `"${data.value}"` : data.value}`;
 
     const variableNode = nodes.find((node) => node.id === variableEdge.source);
     return `${underCase(data.name)} = ${compilers[
@@ -24,11 +32,10 @@ export const compilers = {
   ConsoleLog: (node: Node, nodes: any[], edges: any[]): string => {
     const { data, id } = node;
     const variableEdge = edges.find(
-      (edge) => edge.target === id && edge.targetHandle === "variable"
+      (edge) => edge.target === id && edge.targetHandle === "in-get"
     );
     if (!variableEdge)
       return `console.log(${data.value && "'" + data.value + "'"})`;
-
     const variableNode = nodes.find((node) => node.id === variableEdge.source);
     return `console.log(${compilers[variableNode.type as CompilerKeys](
       variableNode,
@@ -43,16 +50,17 @@ export const compilers = {
       toFalse: string | string[] | null;
     } = { condition: null, toTrue: null, toFalse: null };
     const toTrue = edges.find(
-      (edge) => edge.source === node.id && edge.sourceHandle === "toTrue"
+      (edge) => edge.source === node.id && edge.sourceHandle === "out-true"
     );
     if (toTrue) branches.toTrue = Compile(toTrue, edges, nodes);
     const toFalse = edges.find(
-      (edge) => edge.source === node.id && edge.sourceHandle === "toFalse"
+      (edge) => edge.source === node.id && edge.sourceHandle === "out-false"
     );
     if (toFalse) branches.toFalse = Compile(toFalse, edges, nodes);
 
     const fromCondition = edges.find(
-      (edge) => edge.target === node.id && edge.targetHandle === "condition"
+      (edge) =>
+        edge.target === node.id && edge.targetHandle === "in-get-boolean"
     );
     if (fromCondition) {
       const fromConditionNode = nodes.find(
@@ -78,7 +86,7 @@ export const compilers = {
       right: null,
     };
     const left = edges.find(
-      (edge) => edge.target === node.id && edge.targetHandle === "left"
+      (edge) => edge.target === node.id && edge.targetHandle === "in-get-left"
     );
     if (left) {
       const leftNode = nodes.find((node) => node.id === left.source);
@@ -89,7 +97,7 @@ export const compilers = {
       );
     }
     const right = edges.find(
-      (edge) => edge.target === node.id && edge.targetHandle === "right"
+      (edge) => edge.target === node.id && edge.targetHandle === "in-get-right"
     );
     if (right) {
       const rightNode = nodes.find((node) => node.id === right.source);
@@ -103,13 +111,13 @@ export const compilers = {
     return `${branches.left} ${operator} ${branches.right}`;
   },
   Gate: (node: any, nodes: any[], edges: any[]): string => {
-    const { gate } = node.data;
+    const { gate = "and" } = node.data;
     const branches: { left: string | null; right: string | null } = {
       left: null,
       right: null,
     };
     const left = edges.find(
-      (edge) => edge.target === node.id && edge.targetHandle === "fromleft"
+      (edge) => edge.target === node.id && edge.targetHandle === "in-get-left"
     );
     if (left) {
       const leftNode = nodes.find((node) => node.id === left.source);
@@ -120,7 +128,7 @@ export const compilers = {
       );
     }
     const right = edges.find(
-      (edge) => edge.target === node.id && edge.targetHandle === "fromright"
+      (edge) => edge.target === node.id && edge.targetHandle === "in-get-right"
     );
     if (right) {
       const rightNode = nodes.find((node) => node.id === right.source);
@@ -149,12 +157,12 @@ export const compilers = {
     }
   },
   ParameterGet: (node: any) => {
-    return underCase(node.data.name);
+    return node.data.name;
   },
   Return: (node: Node, nodes: any[], edges: any[]): string => {
     const { data, id } = node;
     const variableEdge = edges.find(
-      (edge) => edge.target === id && edge.targetHandle === "variable"
+      (edge) => edge.target === id && edge.targetHandle === "in-get"
     );
     if (!variableEdge) return `return ${data.value && "'" + data.value + "'"}`;
 
@@ -169,7 +177,7 @@ export const compilers = {
     const { data, id } = node;
     const { name } = data;
     const parameterEdges: Edge[] = edges.filter(
-      (edge) => edge.target === id && edge.targetHandle !== "from"
+      (edge) => edge.target === id && edge.targetHandle !== "in"
     );
     const compiledArgs: string[] = parameterEdges.map((edge) => {
       const EdgeNode: Node | undefined = nodes.find(
@@ -195,7 +203,7 @@ export const compilers = {
       };
     };
     const fromElementEdge: Edge | undefined = edges.find(
-      (edge) => edge.target === id && edge.targetHandle === "variable"
+      (edge) => edge.target === id && edge.targetHandle === "in-get-block"
     );
     if (!fromElementEdge) return "";
     const fromElementNode: Node | undefined = nodes.find(
@@ -225,7 +233,7 @@ export const compilers = {
       attributeValue: string;
     };
     const fromElementEdge: Edge | undefined = edges.find(
-      (edge) => edge.target === id && edge.targetHandle === "variable"
+      (edge) => edge.target === id && edge.targetHandle === "in-get-block"
     );
     if (!fromElementEdge) return "";
     const fromElementNode: Node | undefined = nodes.find(

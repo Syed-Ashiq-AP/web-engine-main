@@ -28,6 +28,10 @@ type JSContextType = {
   setJSFlow: React.Dispatch<React.SetStateAction<string>>;
   JS: string;
   setJS: React.Dispatch<React.SetStateAction<string>>;
+  listeners: { [key: string]: { [key: string]: string } };
+  setListeners: React.Dispatch<
+    React.SetStateAction<{ [key: string]: { [key: string]: string } }>
+  >;
 };
 
 export const JSContext = createContext<JSContextType | null>(null);
@@ -39,8 +43,12 @@ export const JSContextProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const [globalVariables, setGlobalVariables] = useState<{
-    [key: string]: string;
-  }>({});
+    [name: string]: string;
+  }>({
+    string_variable: "string",
+    number_variable: "number",
+    boolean_variable: "boolean",
+  });
   const [JS, setJS] = useState<string>("");
 
   const [globalFunctions, setGlobalFunctions] = useState<{
@@ -50,10 +58,16 @@ export const JSContextProvider = ({ children }: { children: ReactNode }) => {
   const [activeFunction, setActiveFunction] = useState<string | null>(null);
   const [JSInstance, setJSInstance] = useState(null);
 
+  const [listeners, setListeners] = useState<{
+    [key: string]: { [key: string]: string };
+  }>({});
+
   const value = useMemo(
     () => ({
       JS,
       setJS,
+      listeners,
+      setListeners,
       globalVariables,
       setGlobalVariables,
       getVariable: (name: string) => {
@@ -102,7 +116,15 @@ export const JSContextProvider = ({ children }: { children: ReactNode }) => {
       setJSFlow,
     }),
 
-    [JS, globalVariables, globalFunctions, activeFunction, JSInstance, JSFlow]
+    [
+      JS,
+      globalVariables,
+      globalFunctions,
+      activeFunction,
+      JSInstance,
+      JSFlow,
+      listeners,
+    ]
   );
   return <JSContext.Provider value={value}>{children}</JSContext.Provider>;
 };

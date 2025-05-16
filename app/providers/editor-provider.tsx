@@ -27,10 +27,6 @@ export const EditorContextProvider = ({
 }) => {
   const canvas = useRef<HTMLDivElement | null>(null);
   const [activeElement, setActiveElement] = useState<HTMLElement | null>(null);
-  // useEffect(() => {
-  //   if (!canvas.current) return;
-  //   canvas.current.style.backgroundColor = "red";
-  // }, [canvas]);
   const value = useMemo(
     () => ({
       canvas,

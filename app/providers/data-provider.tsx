@@ -185,6 +185,7 @@ export const DataContextProvider = ({
     setActivePage(projectActivePage);
     setHomePage(projectHomePage);
     const pageData = projectPages[projectActivePage];
+    if (!pageData) return;
     loadJsContext(pageData.JsContext);
     loadGlobalStyleContext(pageData.globalStyleContext);
     loadClassContext(pageData.classNameContext);

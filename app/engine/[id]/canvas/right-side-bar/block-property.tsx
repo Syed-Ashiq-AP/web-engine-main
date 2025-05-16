@@ -77,9 +77,6 @@ export const BlockProperty = ({ className }: { className: ClassNameValue }) => {
   );
 
   React.useEffect(() => {
-    console.log(listeners);
-  }, [listeners]);
-  React.useEffect(() => {
     document.dispatchEvent(
       new CustomEvent("setStyles", { detail: { styles } })
     );

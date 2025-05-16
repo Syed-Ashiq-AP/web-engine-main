@@ -37,9 +37,7 @@ type JSContextType = {
 export const JSContext = createContext<JSContextType | null>(null);
 export const JSContextProvider = ({ children }: { children: ReactNode }) => {
   const [JSFlow, setJSFlow] = useState<string>(
-    `{"viewport":{"x":0,"y":0,"zoom":1},"nodes":[
-    
-    ],"edges":[]}`
+    `{"viewport":{"x":0,"y":0,"zoom":1},"nodes":[],"edges":[]}`
   );
 
   const [globalVariables, setGlobalVariables] = useState<{

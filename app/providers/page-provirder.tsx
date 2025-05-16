@@ -26,8 +26,8 @@ type pageContextType = {
 const pageContext = createContext<pageContextType | null>(null);
 
 export const PageContextProvider = ({ children }: { children?: ReactNode }) => {
-  const [pages, setPages] = useState<pagesType>({ home: {}, about: {} });
-  const [activePage, setActivePage] = useState<activePageType>("home");
+  const [pages, setPages] = useState<pagesType>({});
+  const [activePage, setActivePage] = useState<activePageType>(null);
   const [activeMenu, setActiveMenu] = useState<activeMenuType>("pages");
   const [homePage, setHomePage] = useState<string | null>(null);
 

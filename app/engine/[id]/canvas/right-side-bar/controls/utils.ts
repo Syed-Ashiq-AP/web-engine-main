@@ -22,3 +22,9 @@ export const filterKeys = (dict: Record<string, any>, f: Function) => {
 
 export const semiKebabCase = (string: string) =>
   string.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[\s_]+/g, " ");
+
+export const KebabCase = (string: string) =>
+  string
+    .replace(/([a-z])([A-Z])/g, "$1-$2")
+    .replace(/[\s_]+/g, "-")
+    .toLowerCase();

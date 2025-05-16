@@ -7,7 +7,10 @@ import {
   useMemo,
   useState,
 } from "react";
-import { semiKebabCase } from "../engine/[id]/canvas/right-side-bar/controls/utils";
+import {
+  KebabCase,
+  semiKebabCase,
+} from "../engine/[id]/canvas/right-side-bar/controls/utils";
 import { useGlobalStyle } from "./style-provider";
 import {
   classStateKeys,
@@ -52,7 +55,7 @@ export const ClassNameContextProvider = ({
       Object.entries(controls).forEach(([control, styleEntry], _) => {
         let classStyles: { [key: string]: ClassStyles } = {};
         Object.entries(styleEntry).forEach(([style, value]: any, _) => {
-          classStyles[semiKebabCase(style)] = value;
+          classStyles[KebabCase(style)] = value;
         });
         finalClassCSS += `.${activeClass.replace(/\s+/g, "_")}${
           classStates[state as classStateKeys]

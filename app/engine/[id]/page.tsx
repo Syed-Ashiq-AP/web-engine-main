@@ -31,7 +31,7 @@ export default async function Page({
                       <JSContextProvider>
                         <DataContextProvider id={projectID}>
                           <div className="relative w-full h-full">
-                            <Navbar />
+                            <Navbar id={projectID} />
                             <Editor />
                           </div>
                         </DataContextProvider>

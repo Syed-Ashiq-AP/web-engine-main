@@ -1,27 +1,65 @@
 "use client";
 import { createContext, ReactNode, useContext, useMemo, useState } from "react";
-export type activeMenuType = "blocks" | "layers" | "class" | "animation" | "js";
-type pageType = {
-  activeMenu: activeMenuType;
-};
-
+export type activeMenuType =
+  | "pages"
+  | "blocks"
+  | "layers"
+  | "class"
+  | "animation"
+  | "js";
+type pageType = { [key: string]: any };
+type pagesType = { [key: string]: pageType };
+export type activePageType = keyof pagesType | null;
 type pageContextType = {
+  pages: pagesType;
+  getPage: (page: activePageType) => pageType;
+  addPage: (page: activePageType) => void;
+  removePage: (page: activePageType) => void;
+  activePage: activePageType | null;
+  setActivePage: (page: activePageType) => void;
   activeMenu: activeMenuType;
   setActiveMenu: (menu: activeMenuType) => void;
+  setPages: React.Dispatch<React.SetStateAction<pagesType>>;
+  homePage: string | null;
+  setHomePage: (page: string) => void;
 };
 const pageContext = createContext<pageContextType | null>(null);
 
 export const PageContextProvider = ({ children }: { children?: ReactNode }) => {
-  const [page, setPage] = useState<pageType>({ activeMenu: "js" });
+  const [pages, setPages] = useState<pagesType>({ home: {}, about: {} });
+  const [activePage, setActivePage] = useState<activePageType>("home");
+  const [activeMenu, setActiveMenu] = useState<activeMenuType>("pages");
+  const [homePage, setHomePage] = useState<string | null>(null);
 
   const value = useMemo(
     () => ({
-      activeMenu: page.activeMenu,
+      activeMenu: activeMenu,
       setActiveMenu: (menu: activeMenuType) => {
-        setPage((curPage) => ({ ...curPage, activeMenu: menu }));
+        setActiveMenu(menu);
       },
+      pages,
+      setPages,
+      addPage: (page: activePageType) => {
+        setPages((prev) => ({ ...prev, [page as any]: {} }));
+      },
+      removePage: (page: activePageType) => {
+        setPages((prev) => {
+          const { [page as any]: _, ...cur } = prev;
+          return cur;
+        });
+      },
+      activePage,
+      setActivePage: (page: activePageType) => {
+        setActivePage(page);
+      },
+      getPage: (page: activePageType) => {
+        if (!page) return {};
+        return pages[page];
+      },
+      homePage,
+      setHomePage: (page: string) => setHomePage(page),
     }),
-    [page]
+    [activeMenu, activePage, pages, homePage]
   );
 
   return <pageContext.Provider value={value}>{children}</pageContext.Provider>;

@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import JSZip from "jszip";
+
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -41,67 +43,12 @@ import { useSession } from "next-auth/react";
 import { UserDocument } from "@/models/User";
 import { sinceDate } from "@/lib/projects";
 import { useRouter } from "next/navigation";
-
-export const columns: ColumnDef<ProjectDocument>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "name",
-    header: "Web Site",
-    cell: ({ row }) => <div className="lowercase">{row.getValue("name")}</div>,
-  },
-  {
-    accessorKey: "updatedAt",
-    header: "Last Edited",
-    cell: ({ row }) => (
-      <div className="capitalize">{sinceDate(row.getValue("updatedAt"))}</div>
-    ),
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0 hidden sm:block">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <span className="text-destructive">Trash</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
+import { toast } from "sonner";
 
 export function ProjectList() {
   const router = useRouter();
+
+  const [projectExports, setProjectExports] = React.useState<string[]>([]);
 
   const { data: session, status } = useSession();
   const user = session?.user as UserDocument;
@@ -128,25 +75,6 @@ export function ProjectList() {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-
-  const table = useReactTable({
-    data,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
-  });
 
   const addProjectInput = React.useRef<HTMLInputElement | null>(null);
 
@@ -176,6 +104,153 @@ export function ProjectList() {
     const id = row._id;
     router.push(`/engine/${id}`);
   };
+
+  const downloadFile = (name: string, data: any) => {
+    const zip = new JSZip();
+
+    const genZip = (folder: string | null, pageData: any) => {
+      folder
+        ? zip.folder(folder)?.file("index.html", pageData.html)
+        : zip.file("index.html", pageData.html);
+      folder
+        ? zip.folder(folder)?.file("index.js", pageData.js)
+        : zip.file("index.js", pageData.js);
+      folder
+        ? zip.folder(folder)?.file("index.css", pageData.styles)
+        : zip.file("index.css", pageData.styles);
+    };
+
+    Object.entries(data).forEach(([folder, pageData]) => {
+      genZip(folder === "index" ? null : folder, pageData);
+    });
+
+    zip.generateAsync({ type: "blob" }).then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  };
+
+  const handleExportProject = (id: string, name: string) => {
+    setProjectExports((prev) => [...prev, id]);
+    const exportProject = async () => {
+      const req = await fetch(`/api/projects/export?id=${id}`);
+      if (req.ok) {
+        const res = await req.json();
+        if (res.success) {
+          const data = res.projectExport;
+          downloadFile(name, data);
+        }
+      }
+    };
+    const promise = () =>
+      new Promise((resolve) => exportProject().then(() => resolve({})));
+
+    toast.promise(promise, {
+      loading: "Loading...",
+      success: (data) => {
+        setProjectExports((prev) => prev.filter((e) => e !== id));
+        return `Project exported`;
+      },
+      error: "Error",
+    });
+  };
+
+  const columns: ColumnDef<ProjectDocument>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "name",
+      header: "Web Site",
+      cell: ({ row }) => (
+        <div
+          className="lowercase"
+          onClick={() => handleOpenProject(row.original)}
+        >
+          {row.getValue("name")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "updatedAt",
+      header: "Last Edited",
+      cell: ({ row }) => (
+        <div className="capitalize">{sinceDate(row.getValue("updatedAt"))}</div>
+      ),
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const { _id: id, name } = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size={"icon"}>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => router.push(`/preview/${id}/`)}>
+                <span>Preview</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={projectExports.includes(id)}
+                onClick={() => handleExportProject(id, name)}
+              >
+                <span>Export</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <span className="text-destructive">Trash</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const table = useReactTable({
+    data,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+    },
+  });
   return (
     <div className="flex h-full sm:m-5 p-5 rounded-lg border">
       <div className="w-full">
@@ -224,7 +299,6 @@ export function ProjectList() {
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     className=" cursor-pointer"
-                    onClick={() => handleOpenProject(row.original)}
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                   >

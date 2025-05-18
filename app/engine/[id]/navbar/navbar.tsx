@@ -11,6 +11,7 @@ import { Dock, DockIcon } from "./dock";
 import { activeMenuType, usePage } from "@/app/providers/page-provirder";
 import { useData } from "@/app/providers/data-provider";
 import { redirect, useRouter } from "next/navigation";
+import { useTour } from "@reactour/tour";
 
 const menutoActive = {
   Pages: "pages",
@@ -56,6 +57,7 @@ const menu: { heading: MenuHeading; icon: React.ReactNode }[] = [
 ];
 
 export const Navbar = ({ id }: { id: string }) => {
+  const { setIsOpen } = useTour();
   const router = useRouter();
 
   const pageContext = usePage();
@@ -73,6 +75,13 @@ export const Navbar = ({ id }: { id: string }) => {
     icon: React.ReactNode;
     onClick: Function;
   }[] = [
+    {
+      heading: "Tour",
+      icon: <MdOutlinePreview className="size-5" />,
+      onClick: () => {
+        setIsOpen(true);
+      },
+    },
     {
       heading: "Save",
       icon: <CiSaveDown1 className="size-5" />,

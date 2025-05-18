@@ -25,7 +25,12 @@ export const Pages = () => {
   const { loadPage, saveCurrentPage } = dataContext;
   const pageNameRef = useRef<HTMLInputElement | null>(null);
   return (
-    <div className={cn("flex-col items-stretch gap-2 p-2 w-full flex")}>
+    <div
+      className={cn(
+        "flex-col items-stretch gap-2 p-2 w-full flex h-full",
+        "step-page"
+      )}
+    >
       <div className="flex gap-2 w-full">
         <Input placeholder="Enter Page Name" ref={pageNameRef} />
 

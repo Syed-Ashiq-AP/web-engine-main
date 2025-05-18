@@ -13,7 +13,9 @@ export const RightSideBar = () => {
   return (
     <div className="we_side_bar">
       <BlockProperty
-        className={!["layers", "blocks"].includes(activeMenu) && "hidden"}
+        className={
+          !["layers", "blocks", "pages"].includes(activeMenu) && "hidden"
+        }
       />
 
       <ClassProperty className={activeMenu !== "class" && "hidden"} />

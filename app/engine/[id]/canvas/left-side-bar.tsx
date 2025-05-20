@@ -16,7 +16,7 @@ export const LeftSideBar = () => {
   const { activeMenu } = pageContext;
 
   return (
-    <div className="we_side_bar">
+    <div className="we_side_bar we_left_side_bar">
       {activeMenu === "pages" && <Pages />}
       {activeMenu === "blocks" && <AddBlock />}
       {activeMenu === "layers" && <Layers />}

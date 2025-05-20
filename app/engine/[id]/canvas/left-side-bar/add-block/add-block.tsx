@@ -4,7 +4,7 @@ import { BlockItem } from "./block-item";
 
 export const AddBlock = () => {
   return (
-    <div className={"flex-col items-stretch gap-2 p-2 w-full step-blocks"}>
+    <div className={"flex-col items-stretch gap-2 p-2 w-full h-full "}>
       <span className="text-md font-medium">Blocks</span>
       <div className="flex flex-col flex-1  py-2 gap-2 tracking-wide ">
         {Object.entries(blocks).map(([head, bls], k1) => (

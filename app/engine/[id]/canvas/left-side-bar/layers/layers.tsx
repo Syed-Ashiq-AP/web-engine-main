@@ -70,7 +70,7 @@ export const Layers = () => {
   }, [mounted]);
 
   return (
-    <div className={"flex-col items-stretch gap-2 p-2 w-full"}>
+    <div className={"flex-col items-stretch gap-2 p-2 w-full h-full"}>
       <span className="text-md font-medium">Layers</span>
       <div className="flex flex-col flex-1  py-2 gap-2 tracking-wide ">
         {layers}

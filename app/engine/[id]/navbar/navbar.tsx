@@ -91,7 +91,7 @@ export const Navbar = ({ id }: { id: string }) => {
       heading: "Preview",
       icon: <MdOutlinePreview className="size-5" />,
       onClick: () => {
-        router.push(`/preview/${id}/${activePage}`);
+        window.open(`/preview/${id}/${activePage}`, '_blank');
       },
     },
   ];

@@ -27,8 +27,7 @@ export const Pages = () => {
   return (
     <div
       className={cn(
-        "flex-col items-stretch gap-2 p-2 w-full flex h-full",
-        "step-page"
+        "flex-col items-stretch gap-2 p-2 w-full flex h-full"
       )}
     >
       <div className="flex gap-2 w-full">
